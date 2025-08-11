@@ -1,0 +1,15 @@
+langchain
+langchain-community
+langchain-text-splitters
+chromadb
+langchain-chroma
+requests
+langchain-openai
+langchain-ollama
+langchain-litellm
+
+python-dotenv
+argparse
+unstructured
+pypdf
+markdown
