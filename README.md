@@ -8,6 +8,7 @@ This project is a command-line application that allows you to chat with your doc
 - General-purpose chatbot mode.
 - Support for multiple LLM providers: Ollama, LM Studio, LiteLLM.
 - Command-line interface.
+- Graphical user interface (GUI) using Streamlit.
 - Easy configuration using `.env` files.
 - Extensible architecture.
 
@@ -35,6 +36,8 @@ This project is a command-line application that allows you to chat with your doc
 
 ## Usage
 
+### Command-Line Interface
+
 - To start the application, run the following command:
   ```bash
   python src/app_cli.py
@@ -44,6 +47,13 @@ This project is a command-line application that allows you to chat with your doc
   python src/app_cli.py --env config/ollama.env
   ```
 
+### Graphical User Interface
+
+- To start the Streamlit GUI, run the following command:
+  ```bash
+  streamlit run src/app_gui.py
+  ```
+
 ## Future Work
 
-- A graphical user interface (GUI) is planned for a more user-friendly experience.
+- Improve the GUI with more features.

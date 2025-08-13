@@ -36,13 +36,14 @@ class ConfigManager:
             "mode": os.getenv("MODE"),
             "model_name": os.getenv("MODEL_NAME"),
             "model_base_url": os.getenv("MODEL_BASE_URL"),
-            "litellm_api_key": os.getenv("LITELLM_API_KEY"),
+            "litellm_proxy_key": os.getenv("LITELLM_PROXY_KEY"),
+            "provider_api_key": os.getenv("PROVIDER_API_KEY"),
         }
 
         print("\n--- Loaded Configuration from .env ---")
         for key, value in config.items():
             if value:
-                if key in ['embedding_openai_api_key', 'litellm_api_key']:
+                if key in ['embedding_openai_api_key', 'litellm_proxy_key', 'provider_api_key']:
                     print(f"{key}: ************")
                 else:
                     print(f"{key}: {value}")
@@ -193,17 +194,39 @@ class ConfigManager:
         return {"model_base_url": base_url, "model_name": model_name}
 
     def _get_litellm_config(self, config):
+        base_url = config.get("model_base_url")
         model_name = config.get("model_name")
-        api_key = config.get("litellm_api_key")
+        proxy_key = config.get("litellm_proxy_key")
+        provider_key = config.get("provider_api_key")
+
+        if not base_url:
+            base_url = (
+                input(
+                    "Enter LiteLLM proxy server IP and port (e.g., http://localhost:4000): "
+                ).strip()
+                or "http://localhost:4000"
+            )
+
+        if not proxy_key:
+            proxy_key = self._get_litellm_proxy_key()
+
+        if not provider_key:
+            provider_key = self._get_provider_api_key()
 
         if not model_name:
-            model_name = self._prompt_for_model_name("LiteLLM")
-        if not api_key:
-            api_key = self._get_litellm_api_key()
-        return {"model_name": model_name, "litellm_api_key": api_key}
+            models = self._get_litellm_models(base_url, proxy_key)
+            if models:
+                model_name = self._select_model(models)
+            else:
+                model_name = self._prompt_for_model_name("LiteLLM")
 
-    def _get_litellm_api_key(self):
-        return input("Enter your LiteLLM API key: ").strip()
+        return {"model_base_url": base_url, "model_name": model_name, "litellm_proxy_key": proxy_key, "provider_api_key": provider_key}
+
+    def _get_litellm_proxy_key(self):
+        return input("Enter your LiteLLM Proxy key (or press Enter for none): ").strip()
+
+    def _get_provider_api_key(self):
+        return input("Enter your Provider API key (e.g., OpenAI key) or press Enter for none: ").strip()
 
     def _prompt_for_model_name(self, provider):
         return (
@@ -232,6 +255,20 @@ class ConfigManager:
             return [model["id"] for model in models]
         except requests.exceptions.RequestException as e:
             print(f"Error connecting to LM Studio: {e}")
+            return None
+
+    def _get_litellm_models(self, base_url, api_key=None):
+        try:
+            import requests
+            headers = {}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
+            response = requests.get(f"{base_url}/models", headers=headers)
+            response.raise_for_status()
+            models = response.json().get("data", [])
+            return [model["id"] for model in models]
+        except requests.exceptions.RequestException as e:
+            print(f"Error connecting to LiteLLM: {e}")
             return None
 
     def _select_model(self, models):
