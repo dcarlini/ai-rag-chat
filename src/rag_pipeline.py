@@ -62,7 +62,24 @@ class RAGPipeline:
             input_variables=["query"],
         )
 
+    def process_input(self, user_input: str):
+        """Process a single user input and generate a response"""
+        try:
+            if self.chain is None:
+                print("Error: Chat system not properly initialized")
+                return
+
+            if self.config.get("ingest_docs"):
+                response = self.chain({"query": user_input})
+                # Response handling is managed by the streaming handler
+            else:
+                self.chain.invoke(user_input)
+                # Response handling is managed by the streaming handler
+        except Exception as e:
+            print(f"\nError processing input: {e}")
+
     def chat(self):
+        """Legacy method for compatibility"""
         print("\nChat Interface - Type 'quit' to exit")
         print("=" * 50)
         if self.config.get("ingest_docs"):

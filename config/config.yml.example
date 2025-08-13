@@ -28,9 +28,19 @@ api_keys:
   # cohere: your_cohere_api_key
   # google: your_google_api_key
 
+# Document Ingestion Configuration
+# List of paths to documents you want to chat with
+# Comment out or remove this section to use the system in chatbot-only mode
+ingest_docs:
+  - documents/sample1.pdf
+  - documents/sample2.md
+  - documents/folder/**/*.txt  # Supports glob patterns
+
 # Embedding Provider Configuration
+# Used for document processing in RAG mode
 embedding:
   provider: ollama # or openai
   base_url: http://localhost:11434 # For Ollama embeddings
   # base_url: http://localhost:1234 # For OpenAI-compatible embeddings (e.g., LM Studio)
   openai_api_key: your_openai_embedding_api_key # Required if provider is openai
+  model: nomic-embed-text  # The embedding model to use

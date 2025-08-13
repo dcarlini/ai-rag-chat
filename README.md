@@ -1,6 +1,6 @@
 # AI RAG Chat
 
-This project is a command-line application that allows you to chat with your documents using the power of Retrieval-Augmented Generation (RAG). You can also use it as a general-purpose chatbot. It supports various LLM providers and is designed to be extensible.
+This project is a command-line or GUI application that allows you to chat with your documents using the power of Retrieval-Augmented Generation (RAG). You can also use it as a general-purpose chatbot. It supports various LLM providers and is designed to be extensible.
 
 ## Features
 
@@ -9,8 +9,8 @@ This project is a command-line application that allows you to chat with your doc
 - Support for multiple LLM providers: Ollama, LM Studio, LiteLLM.
 - Command-line interface.
 - Graphical user interface (GUI) using Streamlit.
-- Easy configuration using `.env` files.
-- Extensible architecture.
+- Easy configuration using YAML.
+- Extensible architecture with modular provider system.
 
 ## Installation
 
@@ -27,20 +27,60 @@ This project is a command-line application that allows you to chat with your doc
     ```bash
     pip install -r requirements.txt
     ```
+5.  Set up your configuration:
+    ```bash
+    cp config/config.yml.example config/config.yml
+    ```
+    Then edit `config.yml` with your settings:
+    - Set the appropriate URLs for your LLM providers
+    - Add any necessary API keys for LiteLLM providers
+    - Configure other options as needed
 
 ## Configuration
 
-1.  The application can be configured using `.env` files. There are three sample files in the `config` directory: `ollama.env`, `lm_studio.env`, and `litellm.env`.
-2.  You can create your own `.env` file in the root directory or use the `--env` command-line argument to specify the path to your configuration file.
-3.  The following variables can be set in the `.env` file:
-    - `INGEST_DOCS`: Comma-separated paths to your documents.
-    - `EMBEDDING_PROVIDER`: The embedding provider (`ollama` or `openai`).
-    - `EMBEDDING_BASE_URL`: The URL for the embedding server.
-    - `EMBEDDING_OPENAI_API_KEY`: Your API key for OpenAI embeddings.
-    - `MODE`: The LLM provider to use (`ollama`, `lm_studio`, or `litellm`).
-    - `MODEL_NAME`: The specific model name to use.
-    - `MODEL_BASE_URL`: The URL for the LLM server.
-    - `LITELLM_API_KEY`: Your API key for LiteLLM.
+The application is configured using `config.yml`. A sample configuration file is provided at `config/config.yml.example`.
+
+### Provider Configuration
+
+Configure your LLM providers in the `providers` section:
+
+```yaml
+providers:
+  ollama:
+    url: http://localhost:11434
+  lm_studio:
+    url: http://localhost:1234
+  litellm:
+    url: http://localhost:4000
+    api_key: your_litellm_proxy_api_key  # Optional
+```
+
+### API Keys
+
+For LiteLLM provider, you can configure API keys for different services:
+
+```yaml
+api_keys:
+  openai: your_openai_api_key
+  anthropic: your_anthropic_api_key
+  # Add other provider keys as needed
+```
+
+### Document Processing
+
+For RAG functionality, configure document processing settings:
+
+```yaml
+embedding:
+  provider: ollama  # or openai
+  model: nomic-embed-text
+  
+ingest_docs:
+  - path/to/your/documents
+  - another/document/path
+```
+
+Copy `config.yml.example` to `config.yml` and adjust the settings according to your needs. The configuration file is automatically loaded from the `config` directory.
 
 ## Usage
 
@@ -48,14 +88,17 @@ After activating the virtual environment (as described in the Installation secti
 
 ### Command-Line Interface
 
-- To start the application, run the following command:
+- To start the application in CLI mode:
   ```bash
   python src/app_cli.py
   ```
-- You can also specify the path to your configuration file:
-  ```bash
-  python src/app_cli.py --env config/ollama.env
-  ```
+- The CLI will prompt you to:
+  1. Select an LLM provider (Ollama, LM Studio, or LiteLLM)
+  2. Choose from available models for the selected provider
+  
+Available commands in chat:
+- `/restart` - Switch to a different provider or model
+- `/quit` - Exit the application
 
 ### Graphical User Interface
 
