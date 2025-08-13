@@ -15,7 +15,15 @@ This project is a command-line application that allows you to chat with your doc
 ## Installation
 
 1.  Clone the repository.
-2.  Install the required dependencies:
+2.  Create the virtual environment:
+    ```bash
+    python3 -m venv .venv
+    ```
+3.  Activate the virtual environment:
+    ```bash
+    source .venv/bin/activate
+    ```
+4.  Install the required dependencies:
     ```bash
     pip install -r requirements.txt
     ```
@@ -36,6 +44,8 @@ This project is a command-line application that allows you to chat with your doc
 
 ## Usage
 
+After activating the virtual environment (as described in the Installation section):
+
 ### Command-Line Interface
 
 - To start the application, run the following command:
@@ -51,7 +61,7 @@ This project is a command-line application that allows you to chat with your doc
 
 - To start the Streamlit GUI, run the following command:
   ```bash
-  streamlit run src/app_gui.py
+  streamlit run src/app_gui.py --server.headless true
   ```
 
 ## Future Work

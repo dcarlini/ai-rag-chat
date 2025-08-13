@@ -1,12 +1,17 @@
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from streaming_handler import StreamingHandler
+from streamlit_handler import StreamlitStreamingHandler
 from llm_factory import LLMFactory
 from document_processor import DocumentProcessor
 
 class RAGPipeline:
-    def __init__(self, config):
+    def __init__(self, config, handler=None):
         self.config = config
-        self.llm = LLMFactory.create_llm(config)
+        llm_mode = self.config["mode"]
+        llm_model_name = self.config["model_name"]
+        callbacks = [handler] if handler else []
+        self.llm = LLMFactory.create_llm(llm_mode, llm_model_name, callbacks)
         self.chain = None
 
     def setup(self):

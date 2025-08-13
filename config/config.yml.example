@@ -1,0 +1,36 @@
+# Example Configuration for AI RAG Chat
+#
+# This file centralizes the configuration for LLM providers and API keys.
+# You can copy this to config.yml and modify it with your specific settings.
+
+# LLM Provider Configurations
+# Define the base URLs for your LLM services.
+providers:
+  ollama:
+    url: http://localhost:11434
+  lm_studio:
+    url: http://localhost:1234
+  litellm:
+    url: http://localhost:4000
+    # If your LiteLLM proxy requires an API key for access, specify it here.
+    # This is different from the provider-specific API keys below.
+    api_key: your_litellm_proxy_api_key_if_any # Optional
+
+# API Keys for various LLM providers
+# These keys will be used by LiteLLM to authenticate with the respective LLM services.
+# The system will intelligently select the correct key based on the model being used.
+api_keys:
+  # OpenAI API Key (e.g., for GPT models via LiteLLM)
+  openai: sk-your_openai_api_key
+  # Anthropic API Key (e.g., for Claude models via LiteLLM)
+  anthropic: sk-your_anthropic_api_key
+  # Add other provider API keys as needed (e.g., cohere, google, etc.)
+  # cohere: your_cohere_api_key
+  # google: your_google_api_key
+
+# Embedding Provider Configuration
+embedding:
+  provider: ollama # or openai
+  base_url: http://localhost:11434 # For Ollama embeddings
+  # base_url: http://localhost:1234 # For OpenAI-compatible embeddings (e.g., LM Studio)
+  openai_api_key: your_openai_embedding_api_key # Required if provider is openai

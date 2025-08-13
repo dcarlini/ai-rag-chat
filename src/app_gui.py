@@ -1,4 +1,3 @@
-
 import streamlit as st
 import os
 import tempfile
@@ -7,62 +6,80 @@ from rag_pipeline import RAGPipeline
 from llm_factory import LLMFactory
 from document_processor import DocumentProcessor
 from streamlit_handler import StreamlitStreamingHandler
+from config_manager import ConfigManager # Import the new ConfigManager
 
-def get_ollama_models(base_url):
+# Instantiate ConfigManager globally or pass it around
+config_manager = ConfigManager()
+
+def get_ollama_models():
+    base_url = config_manager.get_provider_url("ollama")
     try:
         response = requests.get(f"{base_url}/api/tags")
         response.raise_for_status()
         models = response.json().get("models", [])
         return [model["name"] for model in models]
     except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to Ollama: {e}")
+        st.error(f"Error connecting to Ollama at {base_url}: {e}")
         return None
 
-def get_lm_studio_models(base_url):
+def get_lm_studio_models():
+    base_url = config_manager.get_provider_url("lm_studio")
     try:
         response = requests.get(f"{base_url}/v1/models")
         response.raise_for_status()
         models = response.json().get("data", [])
         return [model["id"] for model in models]
     except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to LM Studio: {e}")
+        st.error(f"Error connecting to LM Studio at {base_url}: {e}")
         return None
 
-def get_litellm_models(base_url, api_key=None):
+def get_litellm_models():
+    base_url = config_manager.get_provider_url("litellm")
+    proxy_key = config_manager.get_litellm_proxy_key()
     try:
         headers = {}
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
+        if proxy_key:
+            headers["Authorization"] = f"Bearer {proxy_key}"
         response = requests.get(f"{base_url}/models", headers=headers)
         response.raise_for_status()
         models = response.json().get("data", [])
         return [model["id"] for model in models]
     except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to LiteLLM: {e}")
+        st.error(f"Error connecting to LiteLLM at {base_url}: {e}")
         if e.response and e.response.status_code == 401:
-            st.error("Authentication error. Please check your API key.")
+            st.error("Authentication error. Please check your LiteLLM proxy key in config.yml.")
         return None
 
-def setup_pipeline(config, handler):
+def setup_pipeline(selected_mode, selected_model_name, uploaded_files, handler):
     """Sets up the RAG pipeline and returns the chain."""
     try:
-        config["callbacks"] = [handler]
-        
         # Create a temporary directory for uploaded files
         temp_dir = tempfile.mkdtemp()
         
         # Save uploaded files to the temporary directory
         saved_files = []
-        if "uploaded_files" in st.session_state and st.session_state.uploaded_files:
-            for uploaded_file in st.session_state.uploaded_files:
+        if uploaded_files:
+            for uploaded_file in uploaded_files:
                 path = os.path.join(temp_dir, uploaded_file.name)
                 with open(path, "wb") as f:
                     f.write(uploaded_file.getvalue())
                 saved_files.append(path)
         
-        config["ingest_docs"] = saved_files
+        # Get embedding configuration from ConfigManager
+        embedding_config = config_manager.get_config().get("embedding", {})
         
-        pipeline = RAGPipeline(config)
+        pipeline_config = {
+            "mode": selected_mode,
+            "model_name": selected_model_name,
+            "callbacks": [handler],
+            "ingest_docs": saved_files,
+            "embedding_provider": embedding_config.get("provider"),
+            "embedding_base_url": embedding_config.get("base_url"),
+            "embedding_openai_api_key": embedding_config.get("openai_api_key"),
+        }
+        
+        handler = StreamlitStreamingHandler(container=st)
+        pipeline = RAGPipeline(pipeline_config, handler=handler)
         pipeline.setup()
         return pipeline.chain
             
@@ -78,69 +95,52 @@ def main():
         st.session_state.messages = []
     if "rag_chain" not in st.session_state:
         st.session_state.rag_chain = None
-    if "config" not in st.session_state:
-        st.session_state.config = {}
     if "handler" not in st.session_state:
         st.session_state.handler = StreamlitStreamingHandler()
+    if "selected_mode" not in st.session_state:
+        st.session_state.selected_mode = "ollama" # Default
+    if "selected_model_name" not in st.session_state:
+        st.session_state.selected_model_name = "" # Default
+    if "uploaded_files" not in st.session_state:
+        st.session_state.uploaded_files = []
 
     # Sidebar for configuration
     with st.sidebar:
         st.header("Configuration")
         
-        # LLM Provider
-        st.session_state.config["mode"] = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm"])
+        # LLM Provider Selection
+        st.session_state.selected_mode = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm"])
         
-        # Base URL
-        if st.session_state.config["mode"] in ["ollama", "lm_studio", "litellm"]:
-            default_url = {
-                "ollama": "http://localhost:11434",
-                "lm_studio": "http://localhost:1234",
-                "litellm": "http://localhost:4000"
-            }
-            st.session_state.config["model_base_url"] = st.text_input("Base URL", default_url[st.session_state.config["mode"]])
-        
-        # API Keys
-        if st.session_state.config["mode"] == "litellm":
-            st.session_state.config["litellm_proxy_key"] = st.text_input("LiteLLM Proxy Key (optional)", type="password")
-            st.session_state.config["provider_api_key"] = st.text_input("Provider API Key (optional)", type="password")
+        # Model Name Selection based on selected provider
+        models = []
+        if st.session_state.selected_mode == "ollama":
+            models = get_ollama_models()
+        elif st.session_state.selected_mode == "lm_studio":
+            models = get_lm_studio_models()
+        elif st.session_state.selected_mode == "litellm":
+            models = get_litellm_models()
 
-        # Model Name
-        if st.session_state.config["mode"] == "ollama":
-            models = get_ollama_models(st.session_state.config["model_base_url"])
-            if models:
-                st.session_state.config["model_name"] = st.selectbox("Model Name", models)
-            else:
-                st.session_state.config["model_name"] = st.text_input("Model Name", "llama3")
-        elif st.session_state.config["mode"] == "lm_studio":
-            models = get_lm_studio_models(st.session_state.config["model_base_url"])
-            if models:
-                st.session_state.config["model_name"] = st.selectbox("Model Name", models)
-            else:
-                st.session_state.config["model_name"] = st.text_input("Model Name", "Not available - check LM Studio")
-        elif st.session_state.config["mode"] == "litellm":
-            proxy_key = st.session_state.config.get("litellm_proxy_key")
-            models = get_litellm_models(st.session_state.config["model_base_url"], proxy_key)
-            if models:
-                st.session_state.config["model_name"] = st.selectbox("Model Name", models)
-            else:
-                st.session_state.config["model_name"] = st.text_input("Model Name", "llama3")
+        if models:
+            st.session_state.selected_model_name = st.selectbox("Model Name", models)
+        else:
+            st.session_state.selected_model_name = st.text_input("Model Name (could not fetch, enter manually)", "llama3")
 
         # Document Uploader
         st.session_state.uploaded_files = st.file_uploader("Upload your documents", accept_multiple_files=True)
 
-        # Embedding Provider
-        if st.session_state.uploaded_files:
-            st.session_state.config["embedding_provider"] = st.selectbox("Embedding Provider", ["ollama", "openai"])
-            if st.session_state.config["embedding_provider"] == "ollama":
-                st.session_state.config["embedding_base_url"] = st.text_input("Embedding Base URL", "http://localhost:11434")
-            elif st.session_state.config["embedding_provider"] == "openai":
-                st.session_state.config["embedding_base_url"] = st.text_input("Embedding Base URL", "http://localhost:1234")
-                st.session_state.config["embedding_openai_api_key"] = st.text_input("Embedding OpenAI API Key", type="password")
+        st.markdown("--- ")
+        st.markdown("Configuration loaded from `config/config.yml`")
+        st.markdown("Please ensure your LLM servers are running and `config.yml` is correctly set up.")
 
 
         if st.button("Apply Configuration"):
             with st.spinner("Setting up RAG Pipeline..."):
-                st.session_state.rag_chain = setup_pipeline(st.session_state.config, st.session_state.handler)
+                st.session_state.rag_chain = setup_pipeline(
+                    st.session_state.selected_mode,
+                    st.session_state.selected_model_name,
+                    st.session_state.uploaded_files,
+                    st.session_state.handler
+                )
                 if st.session_state.rag_chain:
                     st.success("Configuration applied successfully!")
                     st.session_state.messages = [] # Clear messages on re-config

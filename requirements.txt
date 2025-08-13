@@ -13,3 +13,4 @@ argparse
 unstructured
 pypdf
 markdown
+pyyaml
