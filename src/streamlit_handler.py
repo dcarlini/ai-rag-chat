@@ -9,6 +9,8 @@ class StreamlitStreamingHandler(BaseCallbackHandler):
 
     def set_container(self, container):
         self.container = container
+        self.text = ""  # Reset text for new conversation
+        self._text_placeholder = None  # Reset placeholder as well
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
         self.text += token

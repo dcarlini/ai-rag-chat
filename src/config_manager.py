@@ -29,3 +29,6 @@ class ConfigManager:
 
     def get_api_key(self, key_name):
         return ConfigManager._config.get("api_keys", {}).get(key_name)
+
+    def get_embedding_config(self):
+        return ConfigManager._config.get("embedding", {})

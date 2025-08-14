@@ -45,20 +45,72 @@ def get_model_selection(mode):
         print(f"Error fetching models: {e}")
         return None
 
-def setup_provider(config):
+def get_embedding_provider_selection():
+    providers = {
+        '1': 'ollama',
+        '2': 'openai'
+    }
+    
+    print("\nAvailable embedding providers:")
+    for key, provider in providers.items():
+        print(f"{key}. {provider}")
+    
+    while True:
+        choice = input("\nSelect embedding provider (1-2): ")
+        if choice in providers:
+            return providers[choice]
+        print("Invalid choice. Please try again.")
+
+def get_embedding_model_selection(provider):
+    print(f"\nFetching available models for {provider} embeddings...")
+    try:
+        models = LLMFactory.get_available_models(provider)
+        if not models:
+            print(f"No models found for {provider}. Please check your configuration and connection.")
+            return None
+        
+        print("\nAvailable embedding models:")
+        for i, model in enumerate(models, 1):
+            print(f"{i}. {model}")
+        
+        while True:
+            try:
+                choice = int(input(f"\nSelect embedding model (1-{len(models)}): "))
+                if 1 <= choice <= len(models):
+                    return models[choice - 1]
+                print("Invalid choice. Please try again.")
+            except ValueError:
+                print("Please enter a number.")
+    except Exception as e:
+        print(f"Error fetching models: {e}")
+        return None
+
+def setup_providers(config):
     # Get mode selection
     mode = get_mode_selection()
     if not mode:
         print("Mode selection failed.")
-        return None, None
+        return None, None, None, None
 
     # Get model selection
     model = get_model_selection(mode)
     if not model:
         print("Model selection failed.")
-        return None, None
+        return None, None, None, None
 
-    return mode, model
+    # Get embedding provider selection
+    embedding_provider = get_embedding_provider_selection()
+    if not embedding_provider:
+        print("Embedding provider selection failed.")
+        return None, None, None, None
+
+    # Get embedding model selection
+    embedding_model = get_embedding_model_selection(embedding_provider)
+    if not embedding_model:
+        print("Embedding model selection failed.")
+        return None, None, None, None
+
+    return mode, model, embedding_provider, embedding_model
 
 def run_chat(config, handler, rag_pipeline):
     while True:
@@ -88,16 +140,21 @@ def main():
         
         while True:
             # Get mode and model selections
-            mode, model = setup_provider(config)
-            if mode is None or model is None:
+            mode, model, embedding_provider, embedding_model = setup_providers(config)
+            if mode is None or model is None or embedding_provider is None or embedding_model is None:
                 print("Setup failed. Exiting...")
                 return
 
             # Update config with selected mode and model
             config["mode"] = mode
             config["model_name"] = model
+            if "embedding" not in config:
+                config["embedding"] = {}
+            config["embedding"]["provider"] = embedding_provider
+            config["embedding"]["model"] = embedding_model
 
             print(f"\nInitializing chat with {mode} using model: {model}")
+            print(f"Using {embedding_provider} for embeddings with model: {embedding_model}")
             print("\nAvailable commands:")
             print("/restart - Restart provider selection")
             print("/quit    - Exit the program")

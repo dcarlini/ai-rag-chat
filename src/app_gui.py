@@ -11,46 +11,15 @@ from config_manager import ConfigManager # Import the new ConfigManager
 # Instantiate ConfigManager globally or pass it around
 config_manager = ConfigManager()
 
-def get_ollama_models():
-    base_url = config_manager.get_provider_url("ollama")
+def get_available_models(mode):
+    """Gets the available models for the selected mode using LLMFactory."""
     try:
-        response = requests.get(f"{base_url}/api/tags")
-        response.raise_for_status()
-        models = response.json().get("models", [])
-        return [model["name"] for model in models]
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to Ollama at {base_url}: {e}")
+        return LLMFactory.get_available_models(mode)
+    except Exception as e:
+        st.error(f"Error fetching models for {mode}: {e}")
         return None
 
-def get_lm_studio_models():
-    base_url = config_manager.get_provider_url("lm_studio")
-    try:
-        response = requests.get(f"{base_url}/v1/models")
-        response.raise_for_status()
-        models = response.json().get("data", [])
-        return [model["id"] for model in models]
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to LM Studio at {base_url}: {e}")
-        return None
-
-def get_litellm_models():
-    base_url = config_manager.get_provider_url("litellm")
-    proxy_key = config_manager.get_litellm_proxy_key()
-    try:
-        headers = {}
-        if proxy_key:
-            headers["Authorization"] = f"Bearer {proxy_key}"
-        response = requests.get(f"{base_url}/models", headers=headers)
-        response.raise_for_status()
-        models = response.json().get("data", [])
-        return [model["id"] for model in models]
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error connecting to LiteLLM at {base_url}: {e}")
-        if e.response and e.response.status_code == 401:
-            st.error("Authentication error. Please check your LiteLLM proxy key in config.yml.")
-        return None
-
-def setup_pipeline(selected_mode, selected_model_name, uploaded_files, handler):
+def setup_pipeline(selected_mode, selected_model_name, selected_embedding_provider, selected_embedding_model, uploaded_files, handler):
     """Sets up the RAG pipeline and returns the chain."""
     try:
         # Create a temporary directory for uploaded files
@@ -65,20 +34,20 @@ def setup_pipeline(selected_mode, selected_model_name, uploaded_files, handler):
                     f.write(uploaded_file.getvalue())
                 saved_files.append(path)
         
-        # Get embedding configuration from ConfigManager
-        embedding_config = config_manager.get_config().get("embedding", {})
-        
+        embedding_config = {
+            "provider": selected_embedding_provider,
+            "model": selected_embedding_model,
+            "openai_api_key": config_manager.get_config().get("embedding", {}).get("openai_api_key")
+        }
+
         pipeline_config = {
             "mode": selected_mode,
             "model_name": selected_model_name,
             "callbacks": [handler],
             "ingest_docs": saved_files,
-            "embedding_provider": embedding_config.get("provider"),
-            "embedding_base_url": embedding_config.get("base_url"),
-            "embedding_openai_api_key": embedding_config.get("openai_api_key"),
+            "embedding": embedding_config,
         }
         
-        handler = StreamlitStreamingHandler(container=st)
         pipeline = RAGPipeline(pipeline_config, handler=handler)
         pipeline.setup()
         return pipeline.chain
@@ -101,10 +70,13 @@ def main():
         st.session_state.selected_mode = "ollama" # Default
     if "selected_model_name" not in st.session_state:
         st.session_state.selected_model_name = "" # Default
+    if "selected_embedding_provider" not in st.session_state:
+        st.session_state.selected_embedding_provider = "ollama" # Default
+    if "selected_embedding_model" not in st.session_state:
+        st.session_state.selected_embedding_model = "" # Default
     if "uploaded_files" not in st.session_state:
         st.session_state.uploaded_files = []
 
-    # Sidebar for configuration
     with st.sidebar:
         st.header("Configuration")
         
@@ -112,18 +84,26 @@ def main():
         st.session_state.selected_mode = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm"])
         
         # Model Name Selection based on selected provider
-        models = []
-        if st.session_state.selected_mode == "ollama":
-            models = get_ollama_models()
-        elif st.session_state.selected_mode == "lm_studio":
-            models = get_lm_studio_models()
-        elif st.session_state.selected_mode == "litellm":
-            models = get_litellm_models()
+        models = get_available_models(st.session_state.selected_mode)
 
         if models:
             st.session_state.selected_model_name = st.selectbox("Model Name", models)
         else:
             st.session_state.selected_model_name = st.text_input("Model Name (could not fetch, enter manually)", "llama3")
+
+        st.markdown("---")
+        
+        # Embedding Provider Selection
+        st.session_state.selected_embedding_provider = st.selectbox("Embedding Provider", ["ollama", "openai"])
+
+        # Embedding Model Selection based on selected provider
+        embedding_models = get_available_models(st.session_state.selected_embedding_provider)
+
+        if embedding_models:
+            st.session_state.selected_embedding_model = st.selectbox("Embedding Model", embedding_models)
+        else:
+            st.session_state.selected_embedding_model = st.text_input("Embedding Model (could not fetch, enter manually)", "nomic-embed-text")
+
 
         # Document Uploader
         st.session_state.uploaded_files = st.file_uploader("Upload your documents", accept_multiple_files=True)
@@ -138,6 +118,8 @@ def main():
                 st.session_state.rag_chain = setup_pipeline(
                     st.session_state.selected_mode,
                     st.session_state.selected_model_name,
+                    st.session_state.selected_embedding_provider,
+                    st.session_state.selected_embedding_model,
                     st.session_state.uploaded_files,
                     st.session_state.handler
                 )

@@ -40,7 +40,17 @@ ingest_docs:
 # Used for document processing in RAG mode
 embedding:
   provider: ollama # or openai
-  base_url: http://localhost:11434 # For Ollama embeddings
-  # base_url: http://localhost:1234 # For OpenAI-compatible embeddings (e.g., LM Studio)
+  # The URL for the embedding provider is now automatically sourced from the `providers` section above.
+  # For example, if `provider` is `ollama`, the URL `http://localhost:11434` will be used.
   openai_api_key: your_openai_embedding_api_key # Required if provider is openai
   model: nomic-embed-text  # The embedding model to use
+
+# Embedding Models
+#
+# A list of models that are specifically for embeddings. This is used to
+# separate embedding models from chat models in the UI and CLI.
+embedding_models:
+  ollama:
+    - nomic-embed-text
+  openai:
+    - text-embedding-ada-002

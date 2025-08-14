@@ -94,20 +94,26 @@ class DocumentProcessor:
         return vector_store
     
     def _create_embeddings(self):
-        embedding_provider = self.config["embedding_provider"]
+        embedding_config = self.config.get("embedding", {})
+        embedding_provider = embedding_config.get("provider")
+        provider_url = self.config.get("providers", {}).get(embedding_provider, {}).get("url")
+
+        if not provider_url:
+            raise ValueError(f"URL for embedding provider '{embedding_provider}' not found in config.yml")
+
         if embedding_provider == "ollama":
             return OllamaEmbeddings(
-                model="nomic-embed-text",
-                base_url=self.config["embedding_base_url"],
+                model=embedding_config.get("model", "nomic-embed-text"),
+                base_url=provider_url,
             )
         elif embedding_provider == "openai":
             return OpenAIEmbeddings(
-                model="text-embedding-ada-002",
-                openai_api_base=self.config["embedding_base_url"],
-                openai_api_key=self.config["embedding_openai_api_key"],
+                model=embedding_config.get("model", "text-embedding-ada-002"),
+                openai_api_base=provider_url,
+                openai_api_key=embedding_config.get("openai_api_key"),
             )
         else:
-            raise ValueError("Invalid embedding provider specified")
+            raise ValueError("Invalid embedding provider specified in config.yml")
 
     # get method for embeddings
     def get_embeddings(self):
