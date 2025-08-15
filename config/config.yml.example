@@ -15,6 +15,8 @@ providers:
     # If your LiteLLM proxy requires an API key for access, specify it here.
     # This is different from the provider-specific API keys below.
     api_key: your_litellm_proxy_api_key_if_any # Optional
+  openrouter:
+    url: https://openrouter.ai/api
 
 # API Keys for various LLM providers
 # These keys will be used by LiteLLM to authenticate with the respective LLM services.
@@ -24,6 +26,8 @@ api_keys:
   openai: sk-your_openai_api_key
   # Anthropic API Key (e.g., for Claude models via LiteLLM)
   anthropic: sk-your_anthropic_api_key
+  # OpenRouter API Key (for accessing OpenRouter models)
+  openrouter: sk-or-your_openrouter_api_key
   # Add other provider API keys as needed (e.g., cohere, google, etc.)
   # cohere: your_cohere_api_key
   # google: your_google_api_key

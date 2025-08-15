@@ -81,7 +81,7 @@ def main():
         st.header("Configuration")
         
         # LLM Provider Selection
-        st.session_state.selected_mode = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm"])
+        st.session_state.selected_mode = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm", "openrouter"])
         
         # Model Name Selection based on selected provider
         models = get_available_models(st.session_state.selected_mode)

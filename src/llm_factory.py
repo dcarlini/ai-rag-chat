@@ -1,11 +1,12 @@
 from config_manager import ConfigManager
-from llm_providers import LMStudioProvider, LiteLLMProvider, OllamaProvider
+from llm_providers import LMStudioProvider, LiteLLMProvider, OllamaProvider, OpenRouterProvider
 
 class LLMFactory:
     _providers = {
         "lm_studio": LMStudioProvider,
         "litellm": LiteLLMProvider,
-        "ollama": OllamaProvider
+        "ollama": OllamaProvider,
+        "openrouter": OpenRouterProvider
     }
 
     @staticmethod
@@ -30,4 +31,3 @@ class LLMFactory:
 
         provider = provider_class(config_manager, "", [])
         return provider.get_available_models()
-            
