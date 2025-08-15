@@ -49,12 +49,7 @@ embedding:
   openai_api_key: your_openai_embedding_api_key # Required if provider is openai
   model: nomic-embed-text  # The embedding model to use
 
-# Embedding Models
-#
-# A list of models that are specifically for embeddings. This is used to
-# separate embedding models from chat models in the UI and CLI.
-embedding_models:
-  ollama:
-    - nomic-embed-text
-  openai:
-    - text-embedding-ada-002
+# Whitelist for embedding models. This helps the UI to distinguish between chat and embedding models.
+embedding_models_whitelist:
+  - nomic-embed-text
+  - text-embedding-ada-002

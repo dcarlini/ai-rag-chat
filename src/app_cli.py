@@ -64,7 +64,7 @@ def get_embedding_provider_selection():
 def get_embedding_model_selection(provider):
     print(f"\nFetching available models for {provider} embeddings...")
     try:
-        models = LLMFactory.get_available_models(provider)
+        models = LLMFactory.get_available_models(provider, model_type="embedding")
         if not models:
             print(f"No models found for {provider}. Please check your configuration and connection.")
             return None

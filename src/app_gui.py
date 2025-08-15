@@ -11,13 +11,7 @@ from config_manager import ConfigManager # Import the new ConfigManager
 # Instantiate ConfigManager globally or pass it around
 config_manager = ConfigManager()
 
-def get_available_models(mode):
-    """Gets the available models for the selected mode using LLMFactory."""
-    try:
-        return LLMFactory.get_available_models(mode)
-    except Exception as e:
-        st.error(f"Error fetching models for {mode}: {e}")
-        return None
+
 
 def setup_pipeline(selected_mode, selected_model_name, selected_embedding_provider, selected_embedding_model, uploaded_files, handler):
     """Sets up the RAG pipeline and returns the chain."""
@@ -89,17 +83,15 @@ def main():
 
     st.title("AI RAG Chat")
 
-    model_info_placeholder = st.empty()
-
-
     with st.sidebar:
         st.header("Configuration")
+        print("In sidebar")
         
         # LLM Provider Selection
         st.session_state.selected_mode = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm", "openrouter"])
         
         # Model Name Selection based on selected provider
-        models = get_available_models(st.session_state.selected_mode)
+        models = LLMFactory.get_available_models(st.session_state.selected_mode, model_type="chat")
 
         if models:
             if st.session_state.selected_model_name not in models:
@@ -114,7 +106,7 @@ def main():
         st.session_state.selected_embedding_provider = st.selectbox("Embedding Provider", ["ollama", "openai"])
 
         # Embedding Model Selection based on selected provider
-        embedding_models = get_available_models(st.session_state.selected_embedding_provider)
+        embedding_models = LLMFactory.get_available_models(st.session_state.selected_embedding_provider, model_type="embedding")
 
         if embedding_models:
             if st.session_state.selected_embedding_model not in embedding_models:
@@ -155,7 +147,6 @@ def main():
                     st.session_state.pipeline_initialized = True
                     st.success("Configuration applied successfully!")
                     st.session_state.messages = [] # Clear messages on re-config
-                    model_info_placeholder.markdown(f"**LLM Provider:** `{st.session_state.selected_mode}` | **Model:** `{st.session_state.selected_model_name}`<br>**Embedding Provider:** `{st.session_state.selected_embedding_provider}` | **Model:** `{st.session_state.selected_embedding_model}`", unsafe_allow_html=True)
                 
                 # Update previous state
                 st.session_state.prev_selected_mode = st.session_state.selected_mode
@@ -163,6 +154,12 @@ def main():
                 st.session_state.prev_selected_embedding_provider = st.session_state.selected_embedding_provider
                 st.session_state.prev_selected_embedding_model = st.session_state.selected_embedding_model
                 st.session_state.prev_uploaded_files = st.session_state.uploaded_files
+
+    # Display current model information after configuration
+    llm_model_display = st.session_state.selected_model_name if st.session_state.selected_model_name else "Not selected"
+    embedding_model_display = st.session_state.selected_embedding_model if st.session_state.selected_embedding_model else "Not selected"
+    
+    st.markdown(f"**LLM Provider:** `{st.session_state.selected_mode}` | **Model:** `{llm_model_display}`<br>**Embedding Provider:** `{st.session_state.selected_embedding_provider}` | **Model:** `{embedding_model_display}`", unsafe_allow_html=True)
 
     # Chat interface
     for message in st.session_state.messages:
