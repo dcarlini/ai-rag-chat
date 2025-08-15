@@ -1,6 +1,6 @@
 from langchain.callbacks.base import BaseCallbackHandler
 
-class StreamingHandler(BaseCallbackHandler):
+class CommandLineStreamingHandler(BaseCallbackHandler):
     def __init__(self):
         self.buffer = ""
 

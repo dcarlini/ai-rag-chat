@@ -1,7 +1,7 @@
 import sys
 from config_manager import ConfigManager
 from rag_pipeline import RAGPipeline
-from streaming_handler import StreamingHandler
+from streaming_handlers.command_line_streaming_handler import CommandLineStreamingHandler
 from llm_factory import LLMFactory
 
 def get_mode_selection():
@@ -161,7 +161,7 @@ def main():
             print("/quit    - Exit the program")
             
             # Initialize RAG pipeline with streaming handler
-            handler = StreamingHandler()
+            handler = CommandLineStreamingHandler()
             rag_pipeline = RAGPipeline(config, handler=handler)
             rag_pipeline.setup()
 

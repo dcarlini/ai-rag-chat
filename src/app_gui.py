@@ -5,7 +5,7 @@ import requests
 from rag_pipeline import RAGPipeline
 from llm_factory import LLMFactory
 from document_processor import DocumentProcessor
-from streamlit_handler import StreamlitStreamingHandler
+from streaming_handlers.streamlit_streaming_handler import StreamlitStreamingHandler
 from config_manager import ConfigManager # Import the new ConfigManager
 
 # Instantiate ConfigManager globally or pass it around
