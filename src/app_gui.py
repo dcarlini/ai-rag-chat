@@ -88,7 +88,8 @@ def main():
         print("In sidebar")
         
         # LLM Provider Selection
-        st.session_state.selected_mode = st.selectbox("LLM Provider", ["ollama", "lm_studio", "litellm", "openrouter"])
+        available_providers = LLMFactory.get_available_providers()
+        st.session_state.selected_mode = st.selectbox("LLM Provider", available_providers)
         
         # Model Name Selection based on selected provider
         models = LLMFactory.get_available_models(st.session_state.selected_mode, model_type="chat")
@@ -103,7 +104,14 @@ def main():
         st.markdown("---")
         
         # Embedding Provider Selection
-        st.session_state.selected_embedding_provider = st.selectbox("Embedding Provider", ["ollama", "openai"])
+        embedding_providers = LLMFactory.get_embedding_providers()
+        if not embedding_providers:
+            # Fallback to default providers if none are available
+            embedding_providers = ["ollama"]
+        
+        if st.session_state.selected_embedding_provider not in embedding_providers:
+            st.session_state.selected_embedding_provider = embedding_providers[0]
+        st.session_state.selected_embedding_provider = st.selectbox("Embedding Provider", embedding_providers, index=embedding_providers.index(st.session_state.selected_embedding_provider))
 
         # Embedding Model Selection based on selected provider
         embedding_models = LLMFactory.get_available_models(st.session_state.selected_embedding_provider, model_type="embedding")

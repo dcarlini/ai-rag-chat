@@ -17,3 +17,7 @@ class LLMProvider(ABC):
     def get_available_models(self) -> List[str]:
         """Return a list of available models for this provider"""
         pass
+    
+    def supports_embeddings(self) -> bool:
+        """Return whether this provider supports embedding models"""
+        return True

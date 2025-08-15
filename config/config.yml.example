@@ -12,9 +12,6 @@ providers:
     url: http://localhost:1234
   litellm:
     url: http://localhost:4000
-    # If your LiteLLM proxy requires an API key for access, specify it here.
-    # This is different from the provider-specific API keys below.
-    api_key: your_litellm_proxy_api_key_if_any # Optional
   openrouter:
     url: https://openrouter.ai/api
 
@@ -22,6 +19,8 @@ providers:
 # These keys will be used by LiteLLM to authenticate with the respective LLM services.
 # The system will intelligently select the correct key based on the model being used.
 api_keys:
+  # LiteLLM proxy API key (if your LiteLLM proxy requires authentication)
+  litellm: your_litellm_proxy_api_key_if_any # Optional
   # OpenAI API Key (e.g., for GPT models via LiteLLM)
   openai: sk-your_openai_api_key
   # Anthropic API Key (e.g., for Claude models via LiteLLM)

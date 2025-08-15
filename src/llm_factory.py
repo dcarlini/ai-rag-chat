@@ -10,6 +10,29 @@ class LLMFactory:
     }
 
     @staticmethod
+    def get_available_providers():
+        """Return a list of available provider names."""
+        return list(LLMFactory._providers.keys())
+
+    @staticmethod
+    def get_embedding_providers():
+        """Return a list of providers that support embedding models."""
+        config_manager = ConfigManager()
+        embedding_providers = []
+        
+        for provider_name, provider_class in LLMFactory._providers.items():
+            # Create an instance of the provider to check if it supports embeddings
+            try:
+                provider = provider_class(config_manager, "", [])
+                if provider.supports_embeddings():
+                    embedding_providers.append(provider_name)
+            except Exception:
+                # If we can't create the provider, we'll skip it
+                pass
+                
+        return embedding_providers
+
+    @staticmethod
     def create_llm(mode, model_name, callbacks):
         config_manager = ConfigManager()
         

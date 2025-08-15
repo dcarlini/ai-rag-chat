@@ -5,18 +5,18 @@ from streaming_handler import StreamingHandler
 from llm_factory import LLMFactory
 
 def get_mode_selection():
-    modes = {
-        '1': 'ollama',
-        '2': 'lm_studio',
-        '3': 'litellm'
-    }
+    # Get available providers from LLMFactory
+    providers = LLMFactory.get_available_providers()
+    
+    # Create a mapping of numbers to providers
+    modes = {str(i+1): provider for i, provider in enumerate(providers)}
     
     print("\nAvailable modes:")
     for key, mode in modes.items():
         print(f"{key}. {mode}")
     
     while True:
-        choice = input("\nSelect mode (1-3): ")
+        choice = input(f"\nSelect mode (1-{len(modes)}): ")
         if choice in modes:
             return modes[choice]
         print("Invalid choice. Please try again.")
@@ -46,17 +46,18 @@ def get_model_selection(mode):
         return None
 
 def get_embedding_provider_selection():
-    providers = {
-        '1': 'ollama',
-        '2': 'openai'
-    }
+    # Get embedding providers from LLMFactory
+    embedding_providers = LLMFactory.get_embedding_providers()
+    
+    # Create a mapping of numbers to providers
+    providers = {str(i+1): provider for i, provider in enumerate(embedding_providers)}
     
     print("\nAvailable embedding providers:")
     for key, provider in providers.items():
         print(f"{key}. {provider}")
     
     while True:
-        choice = input("\nSelect embedding provider (1-2): ")
+        choice = input(f"\nSelect embedding provider (1-{len(providers)}): ")
         if choice in providers:
             return providers[choice]
         print("Invalid choice. Please try again.")

@@ -22,3 +22,7 @@ class OpenRouterProvider(OpenAICompatibleProvider):
         except:
             # Fallback to default OpenRouter URL if not configured
             return "https://openrouter.ai/api"
+    
+    def supports_embeddings(self) -> bool:
+        """OpenRouter does not support embedding models"""
+        return False
