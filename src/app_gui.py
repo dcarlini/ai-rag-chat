@@ -57,8 +57,6 @@ def setup_pipeline(selected_mode, selected_model_name, selected_embedding_provid
         return None
 
 def main():
-    st.title("AI RAG Chat")
-
     # Initialize session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -76,6 +74,23 @@ def main():
         st.session_state.selected_embedding_model = "" # Default
     if "uploaded_files" not in st.session_state:
         st.session_state.uploaded_files = []
+    if "prev_selected_mode" not in st.session_state:
+        st.session_state.prev_selected_mode = ""
+    if "prev_selected_model_name" not in st.session_state:
+        st.session_state.prev_selected_model_name = ""
+    if "prev_selected_embedding_provider" not in st.session_state:
+        st.session_state.prev_selected_embedding_provider = ""
+    if "prev_selected_embedding_model" not in st.session_state:
+        st.session_state.prev_selected_embedding_model = ""
+    if "prev_uploaded_files" not in st.session_state:
+        st.session_state.prev_uploaded_files = []
+    if "pipeline_initialized" not in st.session_state:
+        st.session_state.pipeline_initialized = False
+
+    st.title("AI RAG Chat")
+
+    model_info_placeholder = st.empty()
+
 
     with st.sidebar:
         st.header("Configuration")
@@ -87,7 +102,9 @@ def main():
         models = get_available_models(st.session_state.selected_mode)
 
         if models:
-            st.session_state.selected_model_name = st.selectbox("Model Name", models)
+            if st.session_state.selected_model_name not in models:
+                st.session_state.selected_model_name = models[0]
+            st.session_state.selected_model_name = st.selectbox("Model Name", models, index=models.index(st.session_state.selected_model_name))
         else:
             st.session_state.selected_model_name = st.text_input("Model Name (could not fetch, enter manually)", "llama3")
 
@@ -100,7 +117,9 @@ def main():
         embedding_models = get_available_models(st.session_state.selected_embedding_provider)
 
         if embedding_models:
-            st.session_state.selected_embedding_model = st.selectbox("Embedding Model", embedding_models)
+            if st.session_state.selected_embedding_model not in embedding_models:
+                st.session_state.selected_embedding_model = embedding_models[0]
+            st.session_state.selected_embedding_model = st.selectbox("Embedding Model", embedding_models, index=embedding_models.index(st.session_state.selected_embedding_model))
         else:
             st.session_state.selected_embedding_model = st.text_input("Embedding Model (could not fetch, enter manually)", "nomic-embed-text")
 
@@ -113,7 +132,16 @@ def main():
         st.markdown("Please ensure your LLM servers are running and `config.yml` is correctly set up.")
 
 
-        if st.button("Apply Configuration"):
+        # Logic to check if configuration has changed
+        config_changed = (
+            st.session_state.get("prev_selected_mode") != st.session_state.selected_mode or
+            st.session_state.get("prev_selected_model_name") != st.session_state.selected_model_name or
+            st.session_state.get("prev_selected_embedding_provider") != st.session_state.selected_embedding_provider or
+            st.session_state.get("prev_selected_embedding_model") != st.session_state.selected_embedding_model or
+            st.session_state.get("prev_uploaded_files") != st.session_state.uploaded_files
+        )
+
+        if not st.session_state.pipeline_initialized or config_changed:
             with st.spinner("Setting up RAG Pipeline..."):
                 st.session_state.rag_chain = setup_pipeline(
                     st.session_state.selected_mode,
@@ -124,8 +152,17 @@ def main():
                     st.session_state.handler
                 )
                 if st.session_state.rag_chain:
+                    st.session_state.pipeline_initialized = True
                     st.success("Configuration applied successfully!")
                     st.session_state.messages = [] # Clear messages on re-config
+                    model_info_placeholder.markdown(f"**LLM Provider:** `{st.session_state.selected_mode}` | **Model:** `{st.session_state.selected_model_name}`<br>**Embedding Provider:** `{st.session_state.selected_embedding_provider}` | **Model:** `{st.session_state.selected_embedding_model}`", unsafe_allow_html=True)
+                
+                # Update previous state
+                st.session_state.prev_selected_mode = st.session_state.selected_mode
+                st.session_state.prev_selected_model_name = st.session_state.selected_model_name
+                st.session_state.prev_selected_embedding_provider = st.session_state.selected_embedding_provider
+                st.session_state.prev_selected_embedding_model = st.session_state.selected_embedding_model
+                st.session_state.prev_uploaded_files = st.session_state.uploaded_files
 
     # Chat interface
     for message in st.session_state.messages:
