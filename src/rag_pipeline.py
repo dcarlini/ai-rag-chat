@@ -68,7 +68,7 @@ class RAGPipeline:
                 return
 
             if self.config.get("ingest_docs"):
-                response = self.chain({"query": user_input})
+                response = self.chain.invoke({"query": user_input})
                 # Response handling is managed by the streaming handler
             else:
                 self.chain.invoke(user_input)
