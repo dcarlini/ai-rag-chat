@@ -59,13 +59,13 @@ def main():
     if "handler" not in st.session_state:
         st.session_state.handler = StreamlitStreamingHandler()
     if "selected_mode" not in st.session_state:
-        st.session_state.selected_mode = "ollama" # Default
+        st.session_state.selected_mode = config_manager.get_config().get("defaults", {}).get("chat_model_provider", "ollama")
     if "selected_model_name" not in st.session_state:
-        st.session_state.selected_model_name = "" # Default
+        st.session_state.selected_model_name = config_manager.get_config().get("defaults", {}).get("chat_model", "")
     if "selected_embedding_provider" not in st.session_state:
-        st.session_state.selected_embedding_provider = "ollama" # Default
+        st.session_state.selected_embedding_provider = config_manager.get_config().get("defaults", {}).get("embedding_model_provider", "ollama")
     if "selected_embedding_model" not in st.session_state:
-        st.session_state.selected_embedding_model = "" # Default
+        st.session_state.selected_embedding_model = config_manager.get_config().get("defaults", {}).get("embedding_model", "")
     if "uploaded_files" not in st.session_state:
         st.session_state.uploaded_files = []
     if "prev_selected_mode" not in st.session_state:
@@ -89,7 +89,9 @@ def main():
         
         # LLM Provider Selection
         available_providers = LLMFactory.get_available_providers()
-        st.session_state.selected_mode = st.selectbox("LLM Provider", available_providers)
+        if st.session_state.selected_mode not in available_providers:
+            st.session_state.selected_mode = available_providers[0]
+        st.session_state.selected_mode = st.selectbox("LLM Provider", available_providers, index=available_providers.index(st.session_state.selected_mode))
         
         # Model Name Selection based on selected provider
         models = LLMFactory.get_available_models(st.session_state.selected_mode, model_type="chat")
@@ -106,7 +108,6 @@ def main():
         # Embedding Provider Selection
         embedding_providers = LLMFactory.get_embedding_providers()
         if not embedding_providers:
-            # Fallback to default providers if none are available
             embedding_providers = ["ollama"]
         
         if st.session_state.selected_embedding_provider not in embedding_providers:

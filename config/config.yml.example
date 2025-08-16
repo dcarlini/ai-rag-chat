@@ -3,6 +3,14 @@
 # This file centralizes the configuration for LLM providers and API keys.
 # You can copy this to config.yml and modify it with your specific settings.
 
+# Default model selections
+# These values will be used as the default selections in the UI and Cli
+defaults:
+  chat_model_provider: ollama
+  chat_model: llama3
+  embedding_model_provider: ollama
+  embedding_model: nomic-embed-text:latest
+
 # LLM Provider Configurations
 # Define the base URLs for your LLM services.
 providers:
@@ -31,6 +39,11 @@ api_keys:
   # cohere: your_cohere_api_key
   # google: your_google_api_key
 
+# Whitelist for embedding models. This helps to distinguish between chat and embedding models.
+embedding_models_whitelist:
+  - nomic-embed-text:latest
+  - text-embedding-nomic-embed-text-v1.5
+
 # Document Ingestion Configuration
 # List of paths to documents you want to chat with
 # Comment out or remove this section to use the system in chatbot-only mode
@@ -38,17 +51,3 @@ ingest_docs:
   - documents/sample1.pdf
   - documents/sample2.md
   - documents/folder/**/*.txt  # Supports glob patterns
-
-# Embedding Provider Configuration
-# Used for document processing in RAG mode
-embedding:
-  provider: ollama # or openai
-  # The URL for the embedding provider is now automatically sourced from the `providers` section above.
-  # For example, if `provider` is `ollama`, the URL `http://localhost:11434` will be used.
-  openai_api_key: your_openai_embedding_api_key # Required if provider is openai
-  model: nomic-embed-text  # The embedding model to use
-
-# Whitelist for embedding models. This helps the UI to distinguish between chat and embedding models.
-embedding_models_whitelist:
-  - nomic-embed-text
-  - text-embedding-ada-002

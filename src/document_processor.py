@@ -12,7 +12,11 @@ CHROMA_PATH = "chromadb"
 class DocumentProcessor:
     def __init__(self, config):
         self.config = config
-        self.ingest_docs = self.config["ingest_docs"]
+        self.ingest_docs = self.config.get("ingest_docs", [])
+        self.embedding_provider = self.config.get("embedding_model_provider")
+        self.embedding_model = self.config.get("embedding_model")
+        self.providers_config = self.config.get("providers")
+        self.api_keys_config = self.config.get("api_keys")
         self.chroma_path = CHROMA_PATH
         self.embeddings = self._create_embeddings()
         self.file_loaders = {
@@ -94,23 +98,21 @@ class DocumentProcessor:
         return vector_store
     
     def _create_embeddings(self):
-        embedding_config = self.config.get("embedding", {})
-        embedding_provider = embedding_config.get("provider")
-        provider_url = self.config.get("providers", {}).get(embedding_provider, {}).get("url")
+        provider_url = self.providers_config.get(self.embedding_provider, {}).get("url")
 
         if not provider_url:
-            raise ValueError(f"URL for embedding provider '{embedding_provider}' not found in config.yml")
+            raise ValueError(f"URL for embedding provider '{self.embedding_provider}' not found in config.yml")
 
-        if embedding_provider == "ollama":
+        if self.embedding_provider == "ollama":
             return OllamaEmbeddings(
-                model=embedding_config.get("model", "nomic-embed-text"),
+                model=self.embedding_model,
                 base_url=provider_url,
             )
-        elif embedding_provider == "openai":
+        elif self.embedding_provider == "openai":
             return OpenAIEmbeddings(
-                model=embedding_config.get("model", "text-embedding-ada-002"),
+                model=self.embedding_model,
                 openai_api_base=provider_url,
-                openai_api_key=embedding_config.get("openai_api_key"),
+                openai_api_key=self.api_keys_config.get("openai"),
             )
         else:
             raise ValueError("Invalid embedding provider specified in config.yml")
