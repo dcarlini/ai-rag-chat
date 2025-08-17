@@ -3,9 +3,9 @@ import json
 import glob
 from langchain_community.document_loaders import PyPDFLoader, UnstructuredMarkdownLoader, TextLoader
 from langchain_chroma import Chroma
-from langchain_text_splitters import CharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 from langchain_openai import OpenAIEmbeddings
+from chunking_strategy_factory import ChunkingStrategyFactory
 
 CHROMA_PATH = "chromadb"
 
@@ -77,14 +77,30 @@ class DocumentProcessor:
                     loader = loader_class(file)
                     documents.extend(loader.load())
 
-            text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-            docs = text_splitter.split_documents(documents)
+            all_chunks = []
+            chunking_strategies_config = self.config.get("chunking_strategies", [])
+            all_chunking_strategies_params = self.config.get("chunking_strategies_parameters", {})
+
+            for strategy_name in chunking_strategies_config:
+                if not isinstance(strategy_name, str):
+                    print(f"Warning: Invalid chunking strategy entry: {strategy_name}. Skipping.")
+                    continue
+
+                strategy_specific_config = all_chunking_strategies_params.get(strategy_name, {})
+                
+                try:
+                    strategy = ChunkingStrategyFactory.create_strategy(strategy_name, strategy_specific_config)
+                    chunks = strategy.split_documents(documents)
+                    all_chunks.extend(chunks)
+                    print(f"  - Applied {strategy_name} chunking: {len(chunks)} chunks generated.")
+                except ValueError as e:
+                    print(f"Error applying {strategy_name} chunking: {e}. Skipping this strategy.")
 
             if vector_store:
-                vector_store.add_documents(docs)
+                vector_store.add_documents(all_chunks)
             else:
                 vector_store = Chroma.from_documents(
-                    docs, self.embeddings, persist_directory=self.chroma_path
+                    all_chunks, self.embeddings, persist_directory=self.chroma_path
                 )
 
             print("Vector store updated with new documents.")

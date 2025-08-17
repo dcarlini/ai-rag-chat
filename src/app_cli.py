@@ -37,8 +37,12 @@ def get_model_selection(mode, models, default_model=None):
     for i, model in enumerate(models, 1):
         print(f"{i}. {model}")
 
+    # If the default model is not in the list, use the first model as the default
+    if default_model not in models:
+        default_model = models[0] if models else None
+
     prompt = f"\nSelect model (1-{len(models)})"
-    if default_model and default_model in models:
+    if default_model:
         prompt += f" or (return for default: {default_model}): "
     else:
         prompt += ": "
@@ -46,7 +50,7 @@ def get_model_selection(mode, models, default_model=None):
     while True:
         try:
             choice_str = input(prompt)
-            if not choice_str and default_model and default_model in models:
+            if not choice_str and default_model:
                 return default_model
             if not choice_str and models:
                 return models[0]
@@ -90,8 +94,12 @@ def get_embedding_model_selection(provider, models, default_model=None):
     for i, model in enumerate(models, 1):
         print(f"{i}. {model}")
 
+    # If the default model is not in the list, use the first model as the default
+    if default_model not in models:
+        default_model = models[0] if models else None
+
     prompt = f"\nSelect embedding model (1-{len(models)})"
-    if default_model and default_model in models:
+    if default_model:
         prompt += f" or (return for default: {default_model}): "
     else:
         prompt += ": "
@@ -99,7 +107,7 @@ def get_embedding_model_selection(provider, models, default_model=None):
     while True:
         try:
             choice_str = input(prompt)
-            if not choice_str and default_model and default_model in models:
+            if not choice_str and default_model:
                 return default_model
             if not choice_str and models:
                 return models[0]

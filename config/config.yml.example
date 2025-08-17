@@ -44,6 +44,27 @@ embedding_models_whitelist:
   - nomic-embed-text:latest
   - text-embedding-nomic-embed-text-v1.5
 
+# Chunking Strategy Configuration
+# Define the active chunking strategies and their specific parameters.
+# The 'name' field selects the strategy.
+# Each strategy can have its own configuration subsection.
+chunking_strategies:
+  - fixed_size # Options: fixed_size, sliding_window, sentence_based, paragraph_based, page_based
+
+chunking_strategies_parameters:
+  fixed_size:
+    size: 1000
+    overlap: 200
+  sliding_window:
+    size: 1000
+    overlap: 200
+  sentence_based:
+    # No specific parameters needed for sentence-based chunking
+  paragraph_based:
+    # No specific parameters needed for paragraph-based chunking
+  page_based:
+    # No specific parameters needed for page-based chunking
+
 # Document Ingestion Configuration
 # List of paths to documents you want to chat with
 # Comment out or remove this section to use the system in chatbot-only mode
